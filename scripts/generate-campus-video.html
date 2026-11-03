@@ -1,0 +1,77 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Creating MIAT campus film</title>
+<style>body{margin:0;background:#0b2545;color:#fff;font:16px/1.5 system-ui,sans-serif;display:grid;min-height:100vh;place-items:center}.wrap{width:min(92vw,900px)}canvas{display:block;width:100%;border-radius:14px;box-shadow:0 24px 70px #0006}p{color:#d8e1e9}</style>
+<main class="wrap"><h1>Creating the MIAT campus film</h1><canvas id="film" width="1280" height="720"></canvas><p id="status" role="status">Rendering a short, silent campus motion graphic…</p></main>
+<script>
+(() => {
+  const canvas=document.getElementById('film'), ctx=canvas.getContext('2d'), status=document.getElementById('status');
+  const fps=24, seconds=8;
+  const options={videoBitsPerSecond:1800000};
+  const mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(type=>MediaRecorder.isTypeSupported(type));
+  if(!mime){status.textContent='This browser cannot record WebM video.';return;}
+  const stream=canvas.captureStream(fps), recorder=new MediaRecorder(stream,{...options,mimeType:mime}), chunks=[];
+  recorder.ondataavailable=event=>{if(event.data.size)chunks.push(event.data);};
+  recorder.onerror=()=>{status.textContent='The video could not be recorded in this browser.';};
+  recorder.onstop=async()=>{
+    const clip=new Blob(chunks,{type:recorder.mimeType||mime});
+    status.textContent='Video ready. Saving the generated campus film…';
+    const link=document.createElement('a');
+    link.href=URL.createObjectURL(clip);link.download='miat-campus-intro.webm';
+    document.body.append(link);link.click();link.remove();
+    setTimeout(()=>location.assign('http://localhost:4174/'),1800);
+  };
+  const roundRect=(x,y,w,h,r,fill)=>{ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();};
+  const line=(x1,y1,x2,y2,color,width)=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();};
+  const circle=(x,y,r,color)=>{ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();};
+  function draw(t){
+    const w=1280,h=720, drift=t/seconds;
+    const sky=ctx.createLinearGradient(0,0,0,h);sky.addColorStop(0,'#dfe8e5');sky.addColorStop(.64,'#c5d4cd');sky.addColorStop(1,'#a5b8ad');ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+    circle(1030+Math.sin(t*.23)*12,116,62,'#e0bd73');circle(1030+Math.sin(t*.23)*12,116,83,'rgba(224,189,115,.13)');
+    for(let i=0;i<4;i++){const x=((140+i*320+t*(8+i*2))%1480)-100,y=92+i%2*56;ctx.fillStyle='rgba(255,255,255,.2)';ctx.beginPath();ctx.ellipse(x,y,74,13,0,0,Math.PI*2);ctx.fill();}
+    // Distant campus blocks establish depth behind the main engineering hall.
+    roundRect(35,292,255,180,5,'#9eafa7');roundRect(65,260,190,45,4,'#7d918a');
+    for(let r=0;r<2;r++)for(let c=0;c<5;c++)roundRect(58+c*43,325+r*60,24,34,2,'#d7ddce');
+    // Modern engineering building with a warm stone frame and shaded glass.
+    ctx.fillStyle='rgba(18,36,42,.16)';ctx.beginPath();ctx.moveTo(340,526);ctx.lineTo(904,526);ctx.lineTo(1066,568);ctx.lineTo(454,568);ctx.fill();
+    roundRect(350,203,600,322,4,'#e4dfd0');
+    ctx.fillStyle='#d0c8b6';ctx.beginPath();ctx.moveTo(350,203);ctx.lineTo(430,160);ctx.lineTo(1010,160);ctx.lineTo(950,203);ctx.fill();
+    roundRect(382,230,535,244,2,'#536d70');
+    for(let r=0;r<4;r++)for(let c=0;c<8;c++){
+      const x=397+c*64,y=245+r*54,shine=.09+.12*(.5+.5*Math.sin(t*.7+c*.52+r));
+      ctx.fillStyle='rgba(213,225,212,'+(0.58+shine)+')';ctx.fillRect(x,y,47,35);
+      ctx.fillStyle='rgba(32,54,58,.32)';ctx.fillRect(x+47,y,3,35);
+    }
+    roundRect(575,416,152,109,2,'#344d50');
+    ctx.fillStyle='#d4c9b4';ctx.fillRect(590,430,122,95);
+    ctx.fillStyle='#425e60';ctx.fillRect(605,445,92,80);
+    ctx.fillStyle='#d3b36e';ctx.fillRect(645,445,12,80);
+    // Walkway and calm perspective lines.
+    ctx.fillStyle='#c6c0ae';ctx.beginPath();ctx.moveTo(0,720);ctx.lineTo(1280,720);ctx.lineTo(1010,540);ctx.lineTo(370,540);ctx.closePath();ctx.fill();
+    for(let i=0;i<9;i++)line(650,540,70+i*150,720,'rgba(74,92,84,.12)',2);
+    line(0,635,1280,635,'rgba(74,92,84,.12)',2);line(0,680,1280,680,'rgba(74,92,84,.1)',2);
+    // Trees, planters, and a small moving student silhouette.
+    [88,1110,1190].forEach((x,i)=>{roundRect(x-15,531,30,88,4,'#6c6250');circle(x,505+Math.sin(t+i)*2,52,'#567667');circle(x-25,522,30,'#698675');circle(x+24,520,32,'#496c5c');});
+    roundRect(260,560,126,48,5,'#8d9985');roundRect(900,560,128,48,5,'#8d9985');
+    const px=800+Math.sin(t*.48)*42,py=542;
+    circle(px,py-40,12,'#344b4d');roundRect(px-11,py-27,22,54,8,'#244955');
+    line(px-2,py+24,px-13+Math.sin(t*2)*4,py+57,'#344b4d',7);line(px+3,py+24,px+14-Math.sin(t*2)*4,py+57,'#344b4d',7);
+    line(px-9,py-10,px-26,py+8,'#344b4d',6);line(px+9,py-10,px+22,py+6,'#344b4d',6);
+    // A compact robotic arm moves in the foreground to signal hands-on engineering.
+    roundRect(1070,565,118,22,6,'#344d50');roundRect(1098,542,62,24,5,'#c9a75f');
+    const jx=1128+Math.sin(t*.65)*22,jy=485+Math.cos(t*.65)*13;
+    line(1128,545,jx,jy,'#405e61',18);circle(jx,jy,15,'#c9a75f');
+    const ex=jx+Math.cos(t*.65-1.05)*88,ey=jy-Math.sin(t*.65-1.05)*82;
+    line(jx,jy,ex,ey,'#405e61',14);circle(ex,ey,12,'#c9a75f');
+    line(ex,ey,ex+28,ey-14,'#344d50',7);line(ex,ey,ex+28,ey+14,'#344d50',7);
+    // Brand title enters gently; the progress rule loops with the film.
+    const fade=Math.min(1,Math.max(0,(t-.55)/1.05));
+    ctx.save();ctx.globalAlpha=fade;ctx.fillStyle='#0b2545';ctx.font='700 17px system-ui';ctx.letterSpacing='4px';ctx.fillText('MERIDIAN INSTITUTE OF ADVANCED TECHNOLOGY',76,478);
+    ctx.font='700 61px system-ui';ctx.letterSpacing='0px';ctx.fillText('LEARN BY',76,548);ctx.fillText('BUILDING.',76,615);
+    roundRect(78,642,162,4,2,'#b58b3c');ctx.font='500 15px system-ui';ctx.fillStyle='#29434a';ctx.fillText('CHENNAI  ·  INDIA',78,679);ctx.restore();
+    ctx.fillStyle='rgba(11,37,69,.18)';ctx.fillRect(0,710,w,10);ctx.fillStyle='#b58b3c';ctx.fillRect(0,710,w*((t%seconds)/seconds),10);
+  }
+  recorder.start(400);
+  const started=performance.now();
+  function frame(now){const elapsed=(now-started)/1000;draw(elapsed);if(elapsed<seconds)requestAnimationFrame(frame);else recorder.stop();}
+  requestAnimationFrame(frame);
+})();
+</script></html>

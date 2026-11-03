@@ -1,0 +1,1 @@
+Audio files may be added here for login-instructions.mp3 and symposium-welcome.mp3. The pages provide written instructions or a transcript when those files are absent. The visual video previews on Home, Admissions, and Symposium are intentionally static templates; no video file is needed.
